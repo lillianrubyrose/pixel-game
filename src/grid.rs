@@ -26,6 +26,15 @@ impl PixelKind {
 pub struct PixelState {
     pub enabled: bool,
     pub kind: PixelKind,
+    pub velocity: i32,
+}
+
+impl PixelState {
+    pub fn reset(&mut self) {
+        self.enabled = false;
+        self.velocity = 1;
+        self.kind = PixelKind::Sand;
+    }
 }
 
 impl Default for PixelState {
@@ -33,6 +42,7 @@ impl Default for PixelState {
         Self {
             enabled: false,
             kind: PixelKind::Sand,
+            velocity: 1,
         }
     }
 }

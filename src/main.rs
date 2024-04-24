@@ -11,12 +11,9 @@ const COLUMNS: i32 = WIDTH / PIXEL_SIZE;
 const ROWS: i32 = HEIGHT / PIXEL_SIZE;
 
 fn main() {
-    let (mut handle, thread) = raylib::init()
-        .size(WIDTH, HEIGHT)
-        .title("Pixel Game")
-        .build();
+    let (mut handle, thread) = init().size(WIDTH, HEIGHT).title("Pixel Game").build();
 
-    handle.set_target_fps(240);
+    handle.set_target_fps(60);
 
     let mut pixel_grid = PixelGrid::new(COLUMNS as usize, ROWS as usize);
     let mut rng = ThreadRng::default();
@@ -40,8 +37,9 @@ fn main() {
         if lmb_held {
             let col = (mouse_pos.x / PIXEL_SIZE as f32).floor() as i32;
             let row = (mouse_pos.y / PIXEL_SIZE as f32).floor() as i32;
-            if let Some(_) = pixel_grid.get_state(col, row) {
+            if pixel_grid.get_state(col, row).is_some() {
                 let transform = |state: &mut PixelState| {
+                    state.reset();
                     state.enabled = true;
                     state.kind = selected_pixel_kind;
                 };
@@ -80,7 +78,7 @@ fn main() {
         // update pixels
         for col in 0..COLUMNS {
             for row in 0..ROWS {
-                let Some(state) = pixel_grid.get_state_mut(col, row) else {
+                let Some(state) = pixel_grid.get_state(col, row) else {
                     unreachable!()
                 };
 
@@ -113,10 +111,40 @@ fn main() {
                                 new_grid.update_state(col, row, |state| state.enabled = true);
                             }
                         } else {
-                            new_grid.update_state(col, row + 1, |state| state.enabled = true);
+                            let mut velocity = state.velocity;
+                            let mut new_row = row + velocity;
+                            if new_row >= ROWS {
+                                new_row = ROWS - 1;
+                                velocity = 0;
+                            }
+
+                            let mut blocker = None;
+                            for i in row+1..=new_row {
+                                if let Some(pixel) = pixel_grid.get_state(col, i) {
+                                    if pixel.enabled {
+                                        blocker = Some(i);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if let Some(blocker) = blocker {
+                                new_row = blocker - 1;
+                                velocity = 0;
+                            }
+                            if new_row < row {
+                                new_row = row+1;
+                            }
+
+                            new_grid.update_state(col, new_row, |state| {
+                                state.enabled = true;
+                                state.velocity = velocity + 1;
+                            });
                         }
                     } else {
-                        new_grid.update_state(col, row, |state| state.enabled = true);
+                        new_grid.update_state(col, row, |state| {
+                            state.enabled = true;
+                        });
                     }
                 }
             }
