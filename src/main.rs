@@ -22,14 +22,22 @@ fn main() {
         let lmb_held = handle.is_mouse_button_down(MouseButton::MOUSE_LEFT_BUTTON);
         let rmb_held = handle.is_mouse_button_down(MouseButton::MOUSE_RIGHT_BUTTON);
         let mouse_pos = handle.get_mouse_position();
+        let curr_fps = handle.get_fps();
         let mut new_grid = PixelGrid::new(COLUMNS as usize, ROWS as usize);
 
         let mut draw = handle.begin_drawing(&thread);
         draw.clear_background(Color::BLACK);
         draw.draw_text(
+            &format!("FPS: {curr_fps}"),
+            4,
+            4,
+            20,
+            Color::RAYWHITE,
+        );
+        draw.draw_text(
             &format!("Currently dropping: {}", selected_pixel_kind.name()),
             4,
-            4,
+            4+20,
             20,
             Color::RAYWHITE,
         );

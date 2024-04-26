@@ -6,12 +6,14 @@ pub enum PixelKind {
 }
 
 impl PixelKind {
-    pub const fn color(&self) -> Color {
-        Color {
-            r: 194,
-            g: 178,
-            b: 128,
-            a: 255,
+    pub fn color(&self) -> Color {
+        match self {
+            PixelKind::Sand => Color {
+                r: 194,
+                g: 178,
+                b: 128,
+                a: 255,
+            },
         }
     }
 
