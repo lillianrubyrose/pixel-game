@@ -22,7 +22,7 @@ public struct ColoredSandPixelData() : IPixelData {
 		}
 	}
 
-	public Color Color { get; } = ColorExtensions.FromHsb(Hue, 70, 100);
+	public Color Color { get; } = ColorExtensions.FromHsb(Hue, 50, 90);
 }
 
 public static class Extensions {
@@ -74,10 +74,12 @@ public record PixelState {
 
 public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 	private readonly int _columns;
+	private readonly int _rows;
 	private readonly List<PixelState> _states;
 
 	public PixelGrid(int columns, int rows) {
 		_columns = columns;
+		_rows = rows;
 
 		_states = new List<PixelState>(columns * rows);
 		for (var i = 0; i < columns * rows; i++) _states.Add(new PixelState { Enabled = false, Kind = PixelKind.Sand });
@@ -97,15 +99,17 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public PixelState? GetState(int col, int rowIdx) {
 		if (col < 0 || rowIdx < 0) return null;
+		if (col >= _columns || rowIdx >= _rows) return null;
 
 		var index = rowIdx * _columns + col;
 		return _states.Count <= index ? null : _states[index];
 	}
 
 	public void Set(int col, int row, PixelState state) {
-		var index = row * _columns + col;
-		if (_states.Count <= index || int.IsNegative(index)) return;
+		if (col < 0 || row < 0) return;
+		if (col >= _columns || row >= _rows) return;
 
+		var index = row * _columns + col;
  		_states[index] = state;
 	}
 
