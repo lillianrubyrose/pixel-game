@@ -7,7 +7,7 @@ const int width = 1200;
 const int height = 1200;
 
 InitWindow(width, height, "Pixel Game");
-SetTargetFPS(60);
+SetTargetFPS(360);
 
 var grid = new PixelGrid(width / pixelSize, height / pixelSize);
 var currentlyDroppingKind = PixelKind.Sand;
@@ -27,8 +27,20 @@ while (!WindowShouldClose()) {
 			pixelState.Enabled = true;
 		});
 	}
-	else if (IsKeyPressed(KeyboardKey.Space)) {
-		currentlyDroppingKind = currentlyDroppingKind.Next();
+	else if (IsMouseButtonDown(MouseButton.Right)) {
+		var pos = GetMousePosition();
+		var col = (int)Math.Floor(pos.X / pixelSize);
+		var row = (int)Math.Floor(pos.Y / pixelSize);
+		grid.UpdateState(col, row, pixelState => { pixelState.Enabled = false; });
+	}
+
+	if (IsKeyPressed(KeyboardKey.Space)) currentlyDroppingKind = currentlyDroppingKind.Next();
+	if (IsKeyPressed(KeyboardKey.F)) {
+		foreach (var (pixelState, col, row) in grid) {
+			pixelState.Kind = currentlyDroppingKind;
+			pixelState.Reset();
+			pixelState.Enabled = true;
+		}
 	}
 
 	// draw pixels
@@ -45,8 +57,8 @@ while (!WindowShouldClose()) {
 		var belowState = grid.GetState(col, row + 1);
 		switch (belowState) {
 			case { Enabled: true }:
-				var leftEmpty = grid.GetState(col - 1, row + 1)?.Enabled != true;
-				var rightEmpty = grid.GetState(col + 1, row + 1)?.Enabled != true;
+				var leftEmpty = grid.GetState(col - 1, row + 1) is { Enabled: false };
+				var rightEmpty = grid.GetState(col + 1, row + 1) is { Enabled: false };
 
 				var direction = -1;
 				if (Random.Shared.NextSingle() > 0.5) direction = 1;

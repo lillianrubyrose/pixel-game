@@ -104,9 +104,9 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public void Set(int col, int row, PixelState state) {
 		var index = row * _columns + col;
-		if (_states.Count <= index) return;
+		if (_states.Count <= index || int.IsNegative(index)) return;
 
-		_states[index] = state;
+ 		_states[index] = state;
 	}
 
 	public void UpdateState(int col, int row, Action<PixelState> transform) {
