@@ -73,22 +73,21 @@ public record PixelState {
 }
 
 public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
-	public readonly List<List<PixelState>> States;
+	private readonly int _columns;
+	private readonly List<PixelState> _states;
 
 	public PixelGrid(int columns, int rows) {
-		States = new List<List<PixelState>>(columns);
-		for (var i = 0; i < columns; i++) {
-			var rowStates = new List<PixelState>(rows);
-			for (var j = 0; j < rows; j++)
-				rowStates.Add(new PixelState { Enabled = false, Kind = PixelKind.Sand });
-			States.Add(rowStates);
-		}
+		_columns = columns;
+
+		_states = new List<PixelState>(columns * rows);
+		for (var i = 0; i < columns * rows; i++) _states.Add(new PixelState { Enabled = false, Kind = PixelKind.Sand });
 	}
 
 	public IEnumerator<Tuple<PixelState, int, int>> GetEnumerator() {
-		for (var i = 0; i < States.Count; i++) {
-			var row = States[i];
-			for (var j = 0; j < row.Count; j++) yield return Tuple.Create(row[j], i, j);
+		for (var i = 0; i < _states.Count; i++) {
+			var column = i % _columns;
+			var row = i / _columns;
+			yield return Tuple.Create(_states[i], column, row);
 		}
 	}
 
@@ -99,9 +98,15 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 	public PixelState? GetState(int col, int rowIdx) {
 		if (col < 0 || rowIdx < 0) return null;
 
-		if (States.Count <= col) return null;
-		var row = States[col];
-		return row.Count <= rowIdx ? null : row[rowIdx];
+		var index = rowIdx * _columns + col;
+		return _states.Count <= index ? null : _states[index];
+	}
+
+	public void Set(int col, int row, PixelState state) {
+		var index = row * _columns + col;
+		if (_states.Count <= index) return;
+
+		_states[index] = state;
 	}
 
 	public void UpdateState(int col, int row, Action<PixelState> transform) {

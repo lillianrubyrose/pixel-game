@@ -52,20 +52,20 @@ while (!WindowShouldClose()) {
 				if (Random.Shared.NextSingle() > 0.5) direction = 1;
 
 				if (leftEmpty && rightEmpty)
-					newGrid.States[col + direction][row] = pixelState;
+					newGrid.Set(col + direction, row, pixelState);
 				else if (leftEmpty)
-					newGrid.States[col - 1][row] = pixelState;
+					newGrid.Set(col - 1, row, pixelState);
 				else if (rightEmpty)
-					newGrid.States[col + 1][row] = pixelState;
+					newGrid.Set(col + 1, row, pixelState);
 				else
-					newGrid.States[col][row] = pixelState;
+					newGrid.Set(col, row, pixelState);
 
 				break;
 			case { Enabled: false }:
-				newGrid.States[col][row + 1] = pixelState;
+				newGrid.Set(col, row + 1, pixelState);
 				break;
 			case null:
-				newGrid.States[col][row] = pixelState;
+				newGrid.Set(col, row, pixelState);
 				break;
 		}
 	}
