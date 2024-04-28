@@ -16,13 +16,13 @@ public struct ColoredSandPixelData() : IPixelData {
 	private static float Hue {
 		get {
 			var cache = _lastHue;
-			_lastHue += 0.0003f;
+			_lastHue += 0.0002f;
 			if (_lastHue > 1.0) _lastHue = 0;
 			return cache;
 		}
 	}
 
-	public Color Color { get; } = ColorExtensions.FromHsb(Hue, 50, 90);
+	public Color Color { get; } = ColorExtensions.FromHsb(Hue, 30, 85);
 }
 
 public static class Extensions {
@@ -70,6 +70,48 @@ public record PixelState {
 	public T? Data<T>() {
 		return (T?)_data;
 	}
+
+	public void Tick(PixelGrid oldGrid, PixelGrid newGrid, int col, int row) {
+		switch (Kind) {
+			case PixelKind.Sand:
+				SimpleTick(oldGrid, newGrid, col, row);
+				break;
+			case PixelKind.ColoredSand:
+				SimpleTick(oldGrid, newGrid, col, row);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(Kind), Kind, null);
+		}
+	}
+
+	private void SimpleTick(PixelGrid oldGrid, PixelGrid newGrid, int col, int row) {
+		var belowState = oldGrid.GetState(col, row + 1);
+		switch (belowState) {
+			case { Enabled: true }:
+				var leftEmpty = oldGrid.GetState(col - 1, row + 1) is { Enabled: false };
+				var rightEmpty = oldGrid.GetState(col + 1, row + 1) is { Enabled: false };
+
+				var direction = -1;
+				if (Random.Shared.NextSingle() > 0.5) direction = 1;
+
+				if (leftEmpty && rightEmpty)
+					newGrid.Set(col + direction, row, this);
+				else if (leftEmpty)
+					newGrid.Set(col - 1, row, this);
+				else if (rightEmpty)
+					newGrid.Set(col + 1, row, this);
+				else
+					newGrid.Set(col, row, this);
+
+				break;
+			case { Enabled: false }:
+				newGrid.Set(col, row + 1, this);
+				break;
+			case null:
+				newGrid.Set(col, row, this);
+				break;
+		}
+	}
 }
 
 public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
@@ -110,7 +152,7 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 		if (col >= _columns || row >= _rows) return;
 
 		var index = row * _columns + col;
- 		_states[index] = state;
+		_states[index] = state;
 	}
 
 	public void UpdateState(int col, int row, Action<PixelState> transform) {

@@ -35,13 +35,17 @@ while (!WindowShouldClose()) {
 	}
 
 	if (IsKeyPressed(KeyboardKey.Space)) currentlyDroppingKind = currentlyDroppingKind.Next();
-	if (IsKeyPressed(KeyboardKey.F)) {
-		foreach (var (pixelState, col, row) in grid) {
+	if (IsKeyPressed(KeyboardKey.F))
+		foreach (var (pixelState, _, _) in grid) {
 			pixelState.Kind = currentlyDroppingKind;
 			pixelState.Reset();
 			pixelState.Enabled = true;
 		}
-	}
+	if (IsKeyPressed(KeyboardKey.Delete))
+		foreach (var (pixelState, _, _) in grid) {
+			pixelState.Enabled = false;
+		}
+
 
 	// draw pixels
 	foreach (var (pixelState, col, row) in grid.Where(tuple => tuple.Item1.Enabled)) {
@@ -53,34 +57,8 @@ while (!WindowShouldClose()) {
 	var newGrid = new PixelGrid(height / pixelSize, height / pixelSize);
 
 	// update pixels
-	foreach (var (pixelState, col, row) in grid.Where(tuple => tuple.Item1.Enabled)) {
-		var belowState = grid.GetState(col, row + 1);
-		switch (belowState) {
-			case { Enabled: true }:
-				var leftEmpty = grid.GetState(col - 1, row + 1) is { Enabled: false };
-				var rightEmpty = grid.GetState(col + 1, row + 1) is { Enabled: false };
-
-				var direction = -1;
-				if (Random.Shared.NextSingle() > 0.5) direction = 1;
-
-				if (leftEmpty && rightEmpty)
-					newGrid.Set(col + direction, row, pixelState);
-				else if (leftEmpty)
-					newGrid.Set(col - 1, row, pixelState);
-				else if (rightEmpty)
-					newGrid.Set(col + 1, row, pixelState);
-				else
-					newGrid.Set(col, row, pixelState);
-
-				break;
-			case { Enabled: false }:
-				newGrid.Set(col, row + 1, pixelState);
-				break;
-			case null:
-				newGrid.Set(col, row, pixelState);
-				break;
-		}
-	}
+	foreach (var (pixelState, col, row) in grid.Where(tuple => tuple.Item1.Enabled))
+		pixelState.Tick(grid, newGrid, col, row);
 
 	grid = newGrid;
 
