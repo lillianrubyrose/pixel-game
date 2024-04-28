@@ -7,7 +7,7 @@ const int width = 1200;
 const int height = 1200;
 
 InitWindow(width, height, "Pixel Game");
-SetTargetFPS(360);
+SetTargetFPS(60);
 
 var grid = new PixelGrid(width / pixelSize, height / pixelSize);
 var currentlyDroppingKind = PixelKind.Sand;
@@ -41,10 +41,10 @@ while (!WindowShouldClose()) {
 			pixelState.Reset();
 			pixelState.Enabled = true;
 		}
+
 	if (IsKeyPressed(KeyboardKey.Delete))
-		foreach (var (pixelState, _, _) in grid) {
+		foreach (var (pixelState, _, _) in grid)
 			pixelState.Enabled = false;
-		}
 
 
 	// draw pixels

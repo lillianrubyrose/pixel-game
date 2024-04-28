@@ -10,7 +10,11 @@ public enum PixelKind {
 
 public interface IPixelData;
 
-public struct ColoredSandPixelData() : IPixelData {
+public class AccelerationPixelData : IPixelData {
+	public int Acceleration { get; set; } = 1;
+}
+
+public class ColoredSandPixelData : AccelerationPixelData {
 	private static float _lastHue;
 
 	private static float Hue {
@@ -50,7 +54,7 @@ public static class Extensions {
 
 	public static IPixelData? DefaultData(this PixelKind pixelKind) {
 		return pixelKind switch {
-			PixelKind.Sand => null,
+			PixelKind.Sand => new AccelerationPixelData(),
 			PixelKind.ColoredSand => new ColoredSandPixelData(),
 			_ => throw new ArgumentOutOfRangeException(nameof(pixelKind), pixelKind, null)
 		};
@@ -67,24 +71,25 @@ public record PixelState {
 		_data = Kind.DefaultData();
 	}
 
-	public T? Data<T>() {
-		return (T?)_data;
+	public T Data<T>() {
+		return (T?)_data ?? throw new InvalidOperationException("Attempt to get data on PixelKind without it present.");
 	}
 
 	public void Tick(PixelGrid oldGrid, PixelGrid newGrid, int col, int row) {
 		switch (Kind) {
 			case PixelKind.Sand:
-				SimpleTick(oldGrid, newGrid, col, row);
+				SimpleTick(oldGrid, newGrid, col, row, Data<AccelerationPixelData>());
 				break;
 			case PixelKind.ColoredSand:
-				SimpleTick(oldGrid, newGrid, col, row);
+				SimpleTick(oldGrid, newGrid, col, row, Data<ColoredSandPixelData>());
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(Kind), Kind, null);
 		}
 	}
 
-	private void SimpleTick(PixelGrid oldGrid, PixelGrid newGrid, int col, int row) {
+	private void SimpleTick(PixelGrid oldGrid, PixelGrid newGrid, int col, int row,
+		AccelerationPixelData? accelerationPixelData = null) {
 		var belowState = oldGrid.GetState(col, row + 1);
 		switch (belowState) {
 			case { Enabled: true }:
@@ -105,7 +110,38 @@ public record PixelState {
 
 				break;
 			case { Enabled: false }:
-				newGrid.Set(col, row + 1, this);
+				if (accelerationPixelData != null) {
+					var acceleration = accelerationPixelData.Acceleration;
+					var newRow = row + acceleration;
+					if (newRow >= newGrid.Rows) {
+						newRow = newGrid.Rows - 1;
+						acceleration = 0;
+					}
+
+					int? blocker = null;
+					for (var i = row + 1; i <= newRow; i++) {
+						var potentialBlocker = oldGrid.GetState(col, i);
+						if (potentialBlocker is not { Enabled: true }) continue;
+						blocker = i;
+						break;
+					}
+
+					if (blocker != null) {
+						newRow = (int)(blocker - 1);
+						acceleration = 0;
+					}
+
+					if (newRow < row) {
+						newRow = row+1;
+					}
+
+					accelerationPixelData.Acceleration = acceleration + 1;
+					newGrid.Set(col, newRow, this);
+				}
+				else {
+					newGrid.Set(col, row + 1, this);
+				}
+
 				break;
 			case null:
 				newGrid.Set(col, row, this);
@@ -116,12 +152,12 @@ public record PixelState {
 
 public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 	private readonly int _columns;
-	private readonly int _rows;
 	private readonly List<PixelState> _states;
+	public readonly int Rows;
 
 	public PixelGrid(int columns, int rows) {
 		_columns = columns;
-		_rows = rows;
+		Rows = rows;
 
 		_states = new List<PixelState>(columns * rows);
 		for (var i = 0; i < columns * rows; i++) _states.Add(new PixelState { Enabled = false, Kind = PixelKind.Sand });
@@ -141,7 +177,7 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public PixelState? GetState(int col, int rowIdx) {
 		if (col < 0 || rowIdx < 0) return null;
-		if (col >= _columns || rowIdx >= _rows) return null;
+		if (col >= _columns || rowIdx >= Rows) return null;
 
 		var index = rowIdx * _columns + col;
 		return _states.Count <= index ? null : _states[index];
@@ -149,7 +185,7 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public void Set(int col, int row, PixelState state) {
 		if (col < 0 || row < 0) return;
-		if (col >= _columns || row >= _rows) return;
+		if (col >= _columns || row >= Rows) return;
 
 		var index = row * _columns + col;
 		_states[index] = state;
