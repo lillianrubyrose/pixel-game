@@ -131,9 +131,7 @@ public record PixelState {
 						acceleration = 0;
 					}
 
-					if (newRow < row) {
-						newRow = row+1;
-					}
+					if (newRow < row) newRow = row + 1;
 
 					accelerationPixelData.Acceleration = acceleration + 1;
 					newGrid.Set(col, newRow, this);
