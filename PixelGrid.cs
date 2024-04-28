@@ -52,7 +52,7 @@ public static class Extensions {
 		};
 	}
 
-	public static IPixelData? DefaultData(this PixelKind pixelKind) {
+	public static IPixelData DefaultData(this PixelKind pixelKind) {
 		return pixelKind switch {
 			PixelKind.Sand => new AccelerationPixelData(),
 			PixelKind.ColoredSand => new ColoredSandPixelData(),
@@ -149,12 +149,12 @@ public record PixelState {
 }
 
 public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
-	private readonly int _columns;
 	private readonly List<PixelState> _states;
+	public readonly int Columns;
 	public readonly int Rows;
 
 	public PixelGrid(int columns, int rows) {
-		_columns = columns;
+		Columns = columns;
 		Rows = rows;
 
 		_states = new List<PixelState>(columns * rows);
@@ -163,8 +163,8 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public IEnumerator<Tuple<PixelState, int, int>> GetEnumerator() {
 		for (var i = 0; i < _states.Count; i++) {
-			var column = i % _columns;
-			var row = i / _columns;
+			var column = i % Columns;
+			var row = i / Columns;
 			yield return Tuple.Create(_states[i], column, row);
 		}
 	}
@@ -175,17 +175,17 @@ public class PixelGrid : IEnumerable<Tuple<PixelState, int, int>> {
 
 	public PixelState? GetState(int col, int rowIdx) {
 		if (col < 0 || rowIdx < 0) return null;
-		if (col >= _columns || rowIdx >= Rows) return null;
+		if (col >= Columns || rowIdx >= Rows) return null;
 
-		var index = rowIdx * _columns + col;
+		var index = rowIdx * Columns + col;
 		return _states.Count <= index ? null : _states[index];
 	}
 
 	public void Set(int col, int row, PixelState state) {
 		if (col < 0 || row < 0) return;
-		if (col >= _columns || row >= Rows) return;
+		if (col >= Columns || row >= Rows) return;
 
-		var index = row * _columns + col;
+		var index = row * Columns + col;
 		_states[index] = state;
 	}
 

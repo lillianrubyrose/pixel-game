@@ -2,7 +2,7 @@
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-const int pixelSize = 5;
+const int pixelSize = 10;
 const int width = 1200;
 const int height = 1200;
 
@@ -80,7 +80,7 @@ while (!WindowShouldClose()) {
 		DrawRectangle(x, y, pixelSize, pixelSize, pixelState.Color());
 	}
 
-	var newGrid = new PixelGrid(height / pixelSize, height / pixelSize);
+	var newGrid = new PixelGrid(grid.Columns, grid.Rows);
 
 	// update pixels
 	foreach (var (pixelState, col, row) in grid.Where(tuple => tuple.Item1.Enabled))
